@@ -1,7 +1,11 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'coin_data.dart';
 import 'dart:io' show Platform;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -10,6 +14,7 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'USD';
+  int ticker = 0;
 
   DropdownButton<String> androidDropdown() {
     List<DropdownMenuItem<String>> dropdownItems = [];
@@ -27,6 +32,7 @@ class _PriceScreenState extends State<PriceScreen> {
       onChanged: (value) {
         setState(() {
           selectedCurrency = value;
+          getData();
         });
       },
     );
@@ -48,12 +54,23 @@ class _PriceScreenState extends State<PriceScreen> {
     );
   }
 
-  //TODO: Create a method here called getData() to get the coin data from coin_data.dart
+  getData() async {
+    var response = await http.get(Uri.parse(
+        'https://rest.coinapi.io/v1/exchangerate/BTC/${selectedCurrency}?apikey=3AE13802-6B26-44D8-B6C1-10CA242C1F9F'));
+    if (response.statusCode == 200) {
+      var decodeData = jsonDecode(response.body);
+      setState(() {
+        ticker = decodeData['rate'].toInt();
+      });
+    } else {
+      print('${response.statusCode}: Error!!');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    //TODO: Call getData() when the screen loads up.
+    getData();
   }
 
   @override
@@ -78,7 +95,7 @@ class _PriceScreenState extends State<PriceScreen> {
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
                   //TODO: Update the Text Widget with the live bitcoin data here.
-                  '1 BTC = ? USD',
+                  '1 BTC = ${ticker}${selectedCurrency}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,
